@@ -1,18 +1,20 @@
-# Utiliza una imagen base de Node.js
-FROM node:14
+# Usa una imagen base de Alpine con la versión de Node.js 14.x
+FROM node:14-alpine
 
-# Establece el directorio de trabajo en la aplicación
+# Establece el directorio de trabajo dentro del contenedor
 WORKDIR /app
 
-# Copia los archivos de la aplicación al contenedor
-COPY package.json package-lock.json /app/
-COPY server.js /app/
+# Copia el package.json y el package-lock.json a la carpeta de trabajo
+COPY package*.json ./
 
-# Instala las dependencias
-RUN npm install --production
+# Instala las dependencias de la aplicación
+RUN npm install
 
-# Expone el puerto 3001
+# Copia el resto de los archivos del proyecto a la carpeta de trabajo
+COPY . .
+ 
+# Expone el puerto en el que se ejecuta tu aplicación
 EXPOSE 3001
 
-# Define el comando de inicio del contenedor
+# Inicia tu aplicación cuando se ejecute el contenedor
 CMD ["node", "server.js"]
