@@ -45,7 +45,7 @@ const storage = multer.diskStorage({
 const upload = multer({ storage: storage }).single('pdf');
 
 app.post('/upload', upload, async (req, res) => {
-  const { id_documento, pdf } = req.body;
+  const { idconsent, pdf } = req.body;
   const decodedPDF = Buffer.from(pdf, 'base64');
 
   const filename = `file_${Date.now()}.pdf`;
@@ -62,9 +62,9 @@ app.post('/upload', upload, async (req, res) => {
 
         // Cargar el archivo PDF en S3
         const fileContent = await fs.promises.readFile(mergedPDFPath);
-        await uploadToS3(id_documento, filename, fileContent);
+        await uploadToS3(idconsent, filename, fileContent);
 
-        const fileURL = `${frontendURL}/pdf/${id_documento}`;
+        const fileURL = `${frontendURL}/pdf/${idconsent}`;
         res.json({ success: true, message: 'PDF recibido y procesado correctamente.', url: fileURL });
       } catch (error) {
         console.error(error);
@@ -98,7 +98,7 @@ async function mergePDFs(file1Path, file2Path) {
   return mergedPDFPath;
 }
 
-async function uploadToS3(id_documento, filename, fileContent) {
+async function uploadToS3(idconsent, filename, fileContent) {
   const params = {
     Bucket: bucketName,
     Key: filename,
@@ -108,14 +108,14 @@ async function uploadToS3(id_documento, filename, fileContent) {
   try {
     await s3.upload(params).promise();
 
-    await insertPDFToDatabase(id_documento, filename, fileContent.toString('base64'));
+    await insertPDFToDatabase(idconsent, filename, fileContent.toString('base64'));
   } catch (error) {
     console.error('Error al cargar el archivo PDF en S3:', error);
     throw error;
   }
 }
 
-async function insertPDFToDatabase(id_documento, filename, base64PDF) {
+async function insertPDFToDatabase(idconsent, filename, base64PDF) {
   try {
     const pool = await sql.connect(dbConfig);
     const ps = new sql.PreparedStatement(pool);
@@ -131,7 +131,7 @@ async function insertPDFToDatabase(id_documento, filename, base64PDF) {
 
     await ps.prepare(query);
     await ps.execute({
-      logId: id_documento,
+      logId: idconsent,
       base64PDF: base64PDF,
     });
     await ps.unprepare();
